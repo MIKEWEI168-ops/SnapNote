@@ -1,5 +1,5 @@
 /* 圖文庫 service worker — 快取 App 本體；接收分享進來的截圖存入 IndexedDB 收件匣 */
-const CACHE = 'snapnote-v1';
+const CACHE = 'snapnote-v2';
 const ASSETS = [
   './',
   './index.html',

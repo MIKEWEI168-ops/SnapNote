@@ -83,7 +83,7 @@ input[type=search]{width:100%;border:1px solid var(--border);border-radius:99px;
     <div class="row"><button class="btn" id="btn-export" style="flex:1">⬇ 匯出備份</button><button class="btn" id="btn-import" style="flex:1">⬆ 匯入備份（覆蓋）</button></div>
     <input type="file" id="import-file" accept="application/json" style="display:none">
   </div>
-  <div class="card small muted">圖文庫 v1 · 單機版：截圖辨識在本機進行（第一次辨識需連網下載中文辨識包，之後離線可用）。</div>
+  <div class="card small muted">圖文庫 v1.1 · 單機版：截圖辨識在本機進行（第一次辨識需連網下載中文辨識包，之後離線可用）。</div>
 </main>
 
 <div class="modal" id="detail">
@@ -122,6 +122,22 @@ const CAT_RULES=[
  ["待辦事項",["待辦","記得","別忘了","要記得","提醒我"]]
 ];
 function guessCategory(text){const t=(text||"").toLowerCase();for(const [c,ws] of CAT_RULES){for(const w of ws){if(t.includes(w.toLowerCase()))return c;}}return "其他";}
+function cleanOCR(text){const lines=(text||"").split("\n").map(function(s){return s.replace(/\s+/g," ").trim();});const kept=[];
+  for(const ln of lines){if(!ln)continue;
+    const cjk=(ln.match(/[\u4e00-\u9fff]/g)||[]).length;
+    const words=(ln.match(/[A-Za-z]{3,}/g)||[]).length;
+    const syms=(ln.match(/[^A-Za-z0-9\u4e00-\u9fff\s]/g)||[]).length;
+    if(ln.length<=1)continue;
+    if(cjk===0&&words===0)continue;
+    if(syms>=4&&cjk<=3)continue;
+    if(syms>=2&&cjk<=1&&words===0)continue;
+    if(cjk<=1&&words===0&&ln.length<=6)continue;
+    kept.push(ln);}
+  return kept.join("\n");}
+function pickTitle(text){const lines=(text||"").split("\n").map(function(s){return s.trim();}).filter(Boolean);
+  for(const ln of lines){const cjk=(ln.match(/[\u4e00-\u9fff]/g)||[]).length;if(cjk>=4)return ln.slice(0,30);}
+  for(const ln of lines){if(ln.length>=6)return ln.slice(0,30);}
+  return "";}
 function makeTitle(text,ts){const lines=(text||"").split("\n").map(s=>s.trim()).filter(Boolean);if(lines.length)return lines[0].slice(0,30);const d=new Date(ts);return "截圖 "+d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();}
 function fmtDate(ts){const d=new Date(ts);return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -176,7 +192,7 @@ async function runOCR(note){const w=await getWorker();const r=await w.recognize(
 function queueOCR(note){ocrQueue.push(note);pumpOCR();}
 async function pumpOCR(){if(ocrBusy)return;const note=ocrQueue.shift();if(!note)return;ocrBusy=true;
   const wrap=$("#progress-wrap"),txt=$("#progress-text"),bar=$("#progress-bar");wrap.style.display="block";bar.style.width="0%";txt.textContent="辨識中："+(note.title||"截圖")+"（還剩 "+ocrQueue.length+" 張）";
-  try{const text=await runOCR(note);note.text=text;if(!note.titleManual){note.title=makeTitle(text,note.ts);}if(!note.catManual){note.cat=guessCategory(text);}await idbPut("notes",note);toast("辨識完成，已歸入「"+note.cat+"」");}
+  try{const text=cleanOCR(await runOCR(note));note.text=text;if(!note.titleManual){note.title=pickTitle(text)||makeTitle(text,note.ts);}if(!note.catManual){note.cat=guessCategory(text);}await idbPut("notes",note);toast("辨識完成，已歸入「"+note.cat+"」");}
   catch(e){txt.textContent="辨識失敗（第一次需要連網下載辨識包），截圖已先存好，之後打開筆記按「重新辨識」再試。";await idbPut("notes",note);}
   sortNotes();renderList();renderCount();ocrBusy=false;
   if(ocrQueue.length){pumpOCR();}else{setTimeout(function(){wrap.style.display="none";},1600);}}
