@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>圖文庫</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<style>
+:root{--teal:#0f766e;--teal2:#115e59;--gold:#d97706;--bg:#f7f5ef;--card:#fff;--ink:#292524;--muted:#78716c;--border:#e7e0cf;--line:#eee7d6;--danger:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:86px}
+header.top{position:sticky;top:0;z-index:50;background:var(--teal2);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+header.top .ttl{font-size:19px;font-weight:700}
+header.top .who{font-size:12.5px;opacity:.85}
+main{max-width:560px;margin:0 auto;padding:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.btn{border:1px solid var(--border);background:#fff;color:var(--ink);border-radius:10px;padding:9px 13px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700}
+.btn-gold{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:700}
+.btn:active{filter:brightness(.95)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.small{font-size:12.5px}.muted{color:var(--muted)}
+.lbl{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+input[type=text],textarea,select{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink)}
+textarea{resize:vertical}
+input[type=search]{width:100%;border:1px solid var(--border);border-radius:99px;padding:10px 16px;font-size:15px;font-family:inherit;background:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--border);background:#fff;border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--muted)}
+.chip.active{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700}
+.chip.star.active{background:var(--gold);border-color:var(--gold)}
+.note-card{display:flex;gap:11px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px;margin-bottom:10px;cursor:pointer;align-items:flex-start}
+.note-card img.thumb{width:62px;height:82px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex:none;background:#f3efe4}
+.note-card .noimg{width:62px;height:82px;border-radius:8px;border:1px solid var(--line);flex:none;background:#f3efe4;display:flex;align-items:center;justify-content:center;font-size:26px}
+.note-card .body{flex:1;min-width:0}
+.note-card .t{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note-card .prev{font-size:13px;color:#57534e;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.note-card .meta{font-size:12px;color:var(--muted);margin-top:5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.badge{background:#f0fdfa;color:var(--teal2);border:1px solid #99f6e4;border-radius:99px;padding:1px 8px;font-size:11.5px}
+.badge.todo{background:#fffbeb;color:#92400e;border-color:#fcd34d}
+.badge.done{background:#f5f5f4;color:var(--muted);border-color:var(--line)}
+.star{color:var(--gold);font-size:15px}
+.done-t{text-decoration:line-through;color:var(--muted)}
+.check{width:26px;height:26px;flex:none;border:2px solid #d6c9a3;border-radius:8px;background:#fff;font-size:16px;line-height:1;cursor:pointer;color:var(--teal);display:flex;align-items:center;justify-content:center;padding:0;margin-top:2px}
+.check.on{background:var(--teal);border-color:var(--teal);color:#fff}
+#progress-wrap{display:none;margin-top:10px}
+#progress-bar-bg{background:#eee7d6;border-radius:99px;height:10px;overflow:hidden}
+#progress-bar{background:var(--teal);height:100%;width:0%;transition:width .2s}
+.modal{position:fixed;inset:0;background:rgba(20,18,16,.55);z-index:800;display:none;overflow-y:auto}
+.modal.open{display:block}
+.modal .sheet{background:var(--bg);max-width:560px;margin:0 auto;min-height:100%;padding:14px 14px 40px}
+.modal img.full{width:100%;border-radius:12px;border:1px solid var(--border)}
+.del{border:0;background:none;color:var(--danger);font-size:15px;cursor:pointer;padding:6px}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#292524;color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;z-index:900;display:none;white-space:nowrap;max-width:92vw}
+.empty{border:1.5px dashed #d6c9a3;border-radius:14px;padding:26px 14px;text-align:center;color:var(--muted);background:#fffdf6}
+</style>
+</head>
+<body>
+<header class="top"><div class="ttl">🗂️ 圖文庫</div><div class="who" id="count-line">—</div></header>
+<main>
+  <div class="card">
+    <div class="row">
+      <button class="btn btn-primary" id="btn-add-img" style="flex:1;padding:13px 8px;font-size:15px">＋ 加入截圖</button>
+      <button class="btn btn-gold" id="btn-add-todo" style="flex:1;padding:13px 8px;font-size:15px">＋ 新增待辦／筆記</button>
+    </div>
+    <input type="file" id="img-file" accept="image/*" multiple style="display:none">
+    <div id="progress-wrap">
+      <div class="small muted" id="progress-text">辨識中…</div>
+      <div id="progress-bar-bg"><div id="progress-bar"></div></div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">截圖會自動辨識成文字、自動分類存好，之後用關鍵字就能查。也可以在相簿裡把截圖「分享」到圖文庫。重要事情用 ⭐ 標起來，待辦事項打勾就算完成。</p>
+  </div>
+  <div class="card">
+    <input type="search" id="q" placeholder="🔍 搜尋文字、標題、分類…">
+    <div class="chips" id="chips"></div>
+  </div>
+  <div id="note-list"></div>
+  <div class="card">
+    <b>備份</b>
+    <p class="small muted">所有資料（含截圖）只存在這支手機裡。換手機前先匯出備份檔。</p>
+    <p class="small" id="storage-info">儲存空間：查詢中…</p>
+    <div class="row"><button class="btn" id="btn-export" style="flex:1">⬇ 匯出備份</button><button class="btn" id="btn-import" style="flex:1">⬆ 匯入備份（覆蓋）</button></div>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+  </div>
+  <div class="card small muted">圖文庫 v1 · 單機版：截圖辨識在本機進行（第一次辨識需連網下載中文辨識包，之後離線可用）。</div>
+</main>
+
+<div class="modal" id="detail">
+  <div class="sheet">
+    <div class="row" style="justify-content:space-between"><b style="font-size:16px">筆記內容</b><button class="btn" id="d-close">✕ 關閉</button></div>
+    <img class="full" id="d-img" alt="截圖" style="display:none;margin-top:10px">
+    <label class="lbl">標題</label><input type="text" id="d-title">
+    <div class="row" style="margin-top:10px">
+      <span class="small muted">分類</span><select id="d-cat" style="flex:1;width:auto"></select>
+      <button class="btn" id="d-star">☆ 標重要</button>
+      <button class="btn" id="d-done" style="display:none">☐ 待辦</button>
+    </div>
+    <label class="lbl">文字內容</label><textarea id="d-text" rows="12"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn btn-primary" id="d-save" style="flex:1">儲存</button>
+      <button class="btn" id="d-ocr" style="display:none">🔁 重新辨識</button>
+      <button class="del" id="d-del">🗑 刪除</button>
+    </div>
+    <p class="small muted" id="d-date"></p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const CATS=["待辦事項","帳單費用","醫療","旅行","帳號","購物","食譜","聊天","學習","其他"];
+const CAT_RULES=[
+ ["帳號",["驗證碼","密碼","登入","帳號","verification code","password","otp"]],
+ ["醫療",["醫院","診所","檢驗","檢查報告","藥局","健保","門診","血壓","血糖"]],
+ ["旅行",["飯店","旅館","航班","飛機","機票","車票","訂房","行程","登機","民宿","hotel","flight"]],
+ ["購物",["訂單","出貨","購物","蝦皮","amazon","momo","pchome","已送達","物流"]],
+ ["帳單費用",["帳單","繳費","電費","水費","瓦斯","金額","應繳","付款","發票","元整","信用卡費"]],
+ ["食譜",["食譜","食材","料理","作法","烘焙","調味","煮法"]],
+ ["學習",["課程","教學","考試","筆記","講義","單字"]],
+ ["待辦事項",["待辦","記得","別忘了","要記得","提醒我"]]
+];
+function guessCategory(text){const t=(text||"").toLowerCase();for(const [c,ws] of CAT_RULES){for(const w of ws){if(t.includes(w.toLowerCase()))return c;}}return "其他";}
+function makeTitle(text,ts){const lines=(text||"").split("\n").map(s=>s.trim()).filter(Boolean);if(lines.length)return lines[0].slice(0,30);const d=new Date(ts);return "截圖 "+d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();}
+function fmtDate(ts){const d=new Date(ts);return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+let toastTimer=null;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.display="none";},2400);}
+
+/* ---------- IndexedDB ---------- */
+const DBN="snapnote";
+function idbOpen(){return new Promise(function(res,rej){const r=indexedDB.open(DBN,1);
+  r.onupgradeneeded=function(){const db=r.result;if(!db.objectStoreNames.contains("notes"))db.createObjectStore("notes",{keyPath:"id"});if(!db.objectStoreNames.contains("inbox"))db.createObjectStore("inbox",{keyPath:"id"});};
+  r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+function idbAll(store){return idbOpen().then(function(db){return new Promise(function(res,rej){const q=db.transaction(store,"readonly").objectStore(store).getAll();q.onsuccess=function(){res(q.result||[]);};q.onerror=function(){rej(q.error);};});});}
+function idbPut(store,val){return idbOpen().then(function(db){return new Promise(function(res,rej){const q=db.transaction(store,"readwrite").objectStore(store).put(val);q.onsuccess=function(){res();};q.onerror=function(){rej(q.error);};});});}
+function idbDel(store,id){return idbOpen().then(function(db){return new Promise(function(res,rej){const q=db.transaction(store,"readwrite").objectStore(store).delete(id);q.onsuccess=function(){res();};q.onerror=function(){rej(q.error);};});});}
+function idbClear(store){return idbOpen().then(function(db){return new Promise(function(res,rej){const q=db.transaction(store,"readwrite").objectStore(store).clear();q.onsuccess=function(){res();};q.onerror=function(){rej(q.error);};});});}
+
+/* ---------- 狀態 ---------- */
+let notes=[];let filterCat="全部";let filterQ="";let detailId=null;
+function matches(n){if(filterCat==="⭐ 重要"&&!n.star)return false;if(filterCat!=="全部"&&filterCat!=="⭐ 重要"&&n.cat!==filterCat)return false;
+  if(filterQ){const h=(n.title+" "+n.text+" "+n.cat).toLowerCase();if(!h.includes(filterQ.toLowerCase()))return false;}return true;}
+function noteRank(n){return n.cat==="待辦事項"?(n.done?2:0):1;}
+function sortNotes(){notes.sort(function(a,b){const ra=noteRank(a),rb=noteRank(b);if(ra!==rb)return ra-rb;if(!!a.star!==!!b.star)return a.star?-1:1;return b.ts-a.ts;});}
+async function loadAll(){notes=await idbAll("notes");sortNotes();renderChips();renderList();renderCount();storageInfo();}
+function renderCount(){const open=notes.filter(function(n){return n.cat==="待辦事項"&&!n.done;}).length;$("#count-line").textContent="共 "+notes.length+" 則"+(open?" · 待辦 "+open+" 件":"");}
+function renderChips(){const cats=["全部","⭐ 重要"].concat(CATS);$("#chips").innerHTML=cats.map(function(c){return '<button class="chip'+(c==="⭐ 重要"?" star":"")+(filterCat===c?" active":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>';}).join("");
+  document.querySelectorAll("#chips .chip").forEach(function(b){b.addEventListener("click",function(){filterCat=b.getAttribute("data-cat");renderChips();renderList();});});}
+let urlCache={};
+function thumbURL(n){if(!n.img)return null;if(!urlCache[n.id])urlCache[n.id]=URL.createObjectURL(n.img);return urlCache[n.id];}
+function renderList(){const el=$("#note-list");const list=notes.filter(matches);
+  if(!notes.length){el.innerHTML='<div class="empty">還沒有任何筆記。<br>按上面「＋ 加入截圖」把截圖存進來，<br>或「＋ 新增待辦／筆記」直接寫一則。</div>';return;}
+  if(!list.length){el.innerHTML='<div class="empty">找不到符合的筆記，換個關鍵字或分類看看。</div>';return;}
+  el.innerHTML=list.map(function(n){const isTodo=n.cat==="待辦事項";const u=thumbURL(n);
+    return '<div class="note-card" data-open="'+n.id+'">'
+    +(isTodo?'<button class="check'+(n.done?" on":"")+'" data-check="'+n.id+'" aria-label="完成">'+(n.done?"✓":"")+'</button>':"")
+    +(u?'<img class="thumb" src="'+u+'" alt="">':'<div class="noimg">'+(isTodo?"📝":"🗒️")+'</div>')
+    +'<div class="body"><div class="t'+(n.done?" done-t":"")+'">'+(n.star?'<span class="star">⭐ </span>':"")+esc(n.title)+'</div>'
+    +'<div class="prev">'+esc(n.text||"（辨識中或尚無文字）")+'</div>'
+    +'<div class="meta"><span class="badge'+(isTodo?(n.done?" done":" todo"):"")+'">'+esc(n.cat)+'</span><span>'+fmtDate(n.ts)+'</span></div></div></div>';}).join("");
+  el.querySelectorAll("[data-open]").forEach(function(c){c.addEventListener("click",function(e){if(e.target.closest("[data-check]"))return;openDetail(c.getAttribute("data-open"));});});
+  el.querySelectorAll("[data-check]").forEach(function(b){b.addEventListener("click",async function(e){e.stopPropagation();const n=notes.find(function(x){return x.id===b.getAttribute("data-check");});if(!n)return;n.done=!n.done;await idbPut("notes",n);sortNotes();renderList();renderCount();toast(n.done?"完成了 ✓":"改回未完成");});});}
+
+/* ---------- 圖片處理＋OCR ---------- */
+function compressImage(file){return new Promise(function(res){const img=new Image();const u=URL.createObjectURL(file);
+  img.onload=function(){URL.revokeObjectURL(u);const MAX=1600;let w=img.naturalWidth,h=img.naturalHeight;const sc=Math.min(1,MAX/Math.max(w,h));w=Math.round(w*sc);h=Math.round(h*sc);
+    const cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);
+    cv.toBlob(function(b){res(b||file);},"image/jpeg",0.82);};
+  img.onerror=function(){URL.revokeObjectURL(u);res(file);};img.src=u;});}
+let ocrWorker=null;let ocrBusy=false;const ocrQueue=[];
+async function getWorker(){if(ocrWorker)return ocrWorker;if(typeof Tesseract==="undefined")throw new Error("no-tesseract");
+  ocrWorker=await Tesseract.createWorker("chi_tra+eng",1,{logger:function(m){if(m.status==="recognizing text"){const bar=$("#progress-bar");if(bar)bar.style.width=Math.round(m.progress*100)+"%";}}});return ocrWorker;}
+async function runOCR(note){const w=await getWorker();const r=await w.recognize(note.img);return (r&&r.data&&r.data.text||"").trim();}
+function queueOCR(note){ocrQueue.push(note);pumpOCR();}
+async function pumpOCR(){if(ocrBusy)return;const note=ocrQueue.shift();if(!note)return;ocrBusy=true;
+  const wrap=$("#progress-wrap"),txt=$("#progress-text"),bar=$("#progress-bar");wrap.style.display="block";bar.style.width="0%";txt.textContent="辨識中："+(note.title||"截圖")+"（還剩 "+ocrQueue.length+" 張）";
+  try{const text=await runOCR(note);note.text=text;if(!note.titleManual){note.title=makeTitle(text,note.ts);}if(!note.catManual){note.cat=guessCategory(text);}await idbPut("notes",note);toast("辨識完成，已歸入「"+note.cat+"」");}
+  catch(e){txt.textContent="辨識失敗（第一次需要連網下載辨識包），截圖已先存好，之後打開筆記按「重新辨識」再試。";await idbPut("notes",note);}
+  sortNotes();renderList();renderCount();ocrBusy=false;
+  if(ocrQueue.length){pumpOCR();}else{setTimeout(function(){wrap.style.display="none";},1600);}}
+async function addImageFiles(files){const imgs=Array.prototype.filter.call(files,function(f){return f.type&&f.type.indexOf("image")===0;});if(!imgs.length)return;
+  for(const f of imgs){const blob=await compressImage(f);const note={id:"n"+Date.now()+"_"+Math.random().toString(36).slice(2,8),ts:Date.now(),title:"辨識中…",text:"",cat:"其他",star:false,done:false,img:blob};
+    notes.unshift(note);await idbPut("notes",note);queueOCR(note);}
+  sortNotes();renderList();renderCount();}
+async function checkInbox(){try{const items=await idbAll("inbox");if(!items.length)return;await idbClear("inbox");
+    const files=items.map(function(it){return it.blob;}).filter(Boolean);if(files.length){toast("收到分享的截圖 "+files.length+" 張，開始辨識");addImageFiles(files);}}catch(e){}}
+
+/* ---------- 詳情 ---------- */
+function openDetail(id){const n=notes.find(function(x){return x.id===id;});if(!n)return;detailId=id;
+  $("#d-title").value=n.title;$("#d-text").value=n.text||"";$("#d-date").textContent="建立："+fmtDate(n.ts);
+  const sel=$("#d-cat");sel.innerHTML=CATS.map(function(c){return '<option value="'+esc(c)+'"'+(n.cat===c?" selected":"")+'>'+esc(c)+'</option>';}).join("");
+  const img=$("#d-img");const u=thumbURL(n);if(u){img.src=u;img.style.display="block";}else{img.style.display="none";}
+  $("#d-ocr").style.display=n.img?"":"none";
+  const st=$("#d-star");st.textContent=n.star?"⭐ 已標重要":"☆ 標重要";
+  const dn=$("#d-done");if(n.cat==="待辦事項"){dn.style.display="";dn.textContent=n.done?"☑ 已完成":"☐ 待辦中";}else{dn.style.display="none";}
+  $("#detail").classList.add("open");}
+function closeDetail(){$("#detail").classList.remove("open");detailId=null;}
+async function saveDetail(){const n=notes.find(function(x){return x.id===detailId;});if(!n)return;
+  n.title=$("#d-title").value.trim()||n.title;n.titleManual=true;n.text=$("#d-text").value;n.cat=$("#d-cat").value;n.catManual=true;
+  await idbPut("notes",n);sortNotes();renderList();renderCount();closeDetail();toast("存好了");}
+
+/* ---------- 備份 ---------- */
+function blobToDataURL(b){return new Promise(function(res){const r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){res(null);};r.readAsDataURL(b);});}
+async function exportBackup(){const out=[];for(const n of notes){out.push({id:n.id,ts:n.ts,title:n.title,text:n.text,cat:n.cat,star:!!n.star,done:!!n.done,img:n.img?await blobToDataURL(n.img):null});}
+  const blob=new Blob([JSON.stringify({app:"snapnote",v:1,notes:out})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="圖文庫備份.json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);toast("備份匯出了");}
+async function importBackup(file){try{const data=JSON.parse(await file.text());if(!data||!Array.isArray(data.notes))throw new Error("bad");
+    await idbClear("notes");notes=[];urlCache={};
+    for(const o of data.notes){let blob=null;if(o.img){try{blob=await (await fetch(o.img)).blob();}catch(e){}}
+      const n={id:o.id||("n"+Date.now()+"_"+Math.random().toString(36).slice(2,8)),ts:o.ts||Date.now(),title:o.title||"筆記",text:o.text||"",cat:CATS.includes(o.cat)?o.cat:"其他",star:!!o.star,done:!!o.done,img:blob,titleManual:true,catManual:true};
+      notes.push(n);await idbPut("notes",n);}
+    sortNotes();renderChips();renderList();renderCount();toast("匯入完成，共 "+notes.length+" 則");}catch(e){toast("匯入失敗：備份檔格式不對");}}
+function storageInfo(){const el=$("#storage-info");if(navigator.storage&&navigator.storage.estimate){navigator.storage.estimate().then(function(q){const mb=function(x){return (x/1048576).toFixed(1);};el.textContent="儲存空間：已用約 "+mb(q.usage||0)+" MB / 可用約 "+mb(q.quota||0)+" MB";}).catch(function(){el.textContent="";});}}
+
+/* ---------- 初始化 ---------- */
+async function addTodoNote(){const note={id:"n"+Date.now()+"_"+Math.random().toString(36).slice(2,8),ts:Date.now(),title:"新的待辦",text:"",cat:"待辦事項",star:false,done:false,img:null,titleManual:false,catManual:true};
+  notes.unshift(note);await idbPut("notes",note);sortNotes();renderList();renderCount();openDetail(note.id);const t=$("#d-title");t.focus();t.select();}
+function init(){loadAll().then(checkInbox).catch(function(){});
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+  $("#btn-add-img").onclick=function(){$("#img-file").click();};
+  $("#img-file").addEventListener("change",function(){if(this.files.length)addImageFiles(this.files);this.value="";});
+  $("#btn-add-todo").onclick=addTodoNote;
+  $("#q").addEventListener("input",function(){filterQ=this.value.trim();renderList();});
+  $("#d-close").onclick=closeDetail;
+  $("#d-save").onclick=saveDetail;
+  $("#d-del").onclick=async function(){const n=notes.find(function(x){return x.id===detailId;});if(!n)return;if(!confirm("確定要刪除這則筆記？"))return;notes=notes.filter(function(x){return x.id!==detailId;});await idbDel("notes",detailId);closeDetail();renderList();renderCount();toast("已刪除");};
+  $("#d-star").onclick=async function(){const n=notes.find(function(x){return x.id===detailId;});if(!n)return;n.star=!n.star;await idbPut("notes",n);this.textContent=n.star?"⭐ 已標重要":"☆ 標重要";sortNotes();renderList();renderCount();};
+  $("#d-done").onclick=async function(){const n=notes.find(function(x){return x.id===detailId;});if(!n)return;n.done=!n.done;await idbPut("notes",n);this.textContent=n.done?"☑ 已完成":"☐ 待辦中";sortNotes();renderList();renderCount();};
+  $("#d-cat").addEventListener("change",function(){const n=notes.find(function(x){return x.id===detailId;});const dn=$("#d-done");if(this.value==="待辦事項"&&n){dn.style.display="";dn.textContent=n.done?"☑ 已完成":"☐ 待辦中";}else{dn.style.display="none";}});
+  $("#d-ocr").onclick=async function(){const n=notes.find(function(x){return x.id===detailId;});if(!n||!n.img)return;closeDetail();queueOCR(n);toast("重新辨識中…");};
+  $("#btn-export").onclick=exportBackup;
+  $("#btn-import").onclick=function(){$("#import-file").click();};
+  $("#import-file").addEventListener("change",function(){if(this.files.length)importBackup(this.files[0]);this.value="";});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)checkInbox();});
+  if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}}
+init();
+</script>
+</body>
+</html>
