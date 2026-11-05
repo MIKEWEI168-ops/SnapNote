@@ -83,7 +83,7 @@ input[type=search]{width:100%;border:1px solid var(--border);border-radius:99px;
     <div class="row"><button class="btn" id="btn-export" style="flex:1">⬇ 匯出備份</button><button class="btn" id="btn-import" style="flex:1">⬆ 匯入備份（覆蓋）</button></div>
     <input type="file" id="import-file" accept="application/json" style="display:none">
   </div>
-  <div class="card small muted">圖文庫 v1.1 · 單機版：截圖辨識在本機進行（第一次辨識需連網下載中文辨識包，之後離線可用）。</div>
+  <div class="card small muted">圖文庫 v1.2 · 單機版：截圖辨識在本機進行（第一次辨識需連網下載中文辨識包，之後離線可用）。</div>
 </main>
 
 <div class="modal" id="detail">
@@ -117,7 +117,7 @@ const CAT_RULES=[
  ["旅行",["飯店","旅館","航班","飛機","機票","車票","訂房","行程","登機","民宿","hotel","flight"]],
  ["購物",["訂單","出貨","購物","蝦皮","amazon","momo","pchome","已送達","物流"]],
  ["帳單費用",["帳單","繳費","電費","水費","瓦斯","金額","應繳","付款","發票","元整","信用卡費"]],
- ["食譜",["食譜","食材","料理","作法","烘焙","調味","煮法"]],
+ ["食譜",["食譜","食材","料理","作法","烘焙","調味","煮法","配方","麵粉","面粉","澱粉","淀粉","烤箱","烹飪"]],
  ["學習",["課程","教學","考試","筆記","講義","單字"]],
  ["待辦事項",["待辦","記得","別忘了","要記得","提醒我"]]
 ];
@@ -188,7 +188,18 @@ function compressImage(file){return new Promise(function(res){const img=new Imag
 let ocrWorker=null;let ocrBusy=false;const ocrQueue=[];
 async function getWorker(){if(ocrWorker)return ocrWorker;if(typeof Tesseract==="undefined")throw new Error("no-tesseract");
   ocrWorker=await Tesseract.createWorker("chi_tra+eng",1,{logger:function(m){if(m.status==="recognizing text"){const bar=$("#progress-bar");if(bar)bar.style.width=Math.round(m.progress*100)+"%";}}});return ocrWorker;}
-async function runOCR(note){const w=await getWorker();const r=await w.recognize(note.img);return (r&&r.data&&r.data.text||"").trim();}
+function ocrScore(text){const t=text||"";const cjk=(t.match(/[\u4e00-\u9fff]/g)||[]).length;const syms=(t.match(/[^A-Za-z0-9\u4e00-\u9fff\s]/g)||[]).length;const words=(t.match(/[A-Za-z]{2,}/g)||[]).length;return cjk*3+words*2-syms*2;}
+function enhanceImage(blob){return new Promise(function(res){const img=new Image();const u=URL.createObjectURL(blob);
+  img.onload=function(){URL.revokeObjectURL(u);const MAXW=2400;let sc=Math.min(2,MAXW/img.naturalWidth);if(sc<1)sc=1;
+    const cv=document.createElement("canvas");cv.width=Math.round(img.naturalWidth*sc);cv.height=Math.round(img.naturalHeight*sc);const cx=cv.getContext("2d");
+    cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(img,0,0,cv.width,cv.height);
+    try{const id=cx.getImageData(0,0,cv.width,cv.height);const d=id.data;for(let i=0;i<d.length;i+=4){let g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];g=g<150?Math.max(0,g*0.5):Math.min(255,255-(255-g)*0.5);d[i]=g;d[i+1]=g;d[i+2]=g;}cx.putImageData(id,0,0);}catch(e){}
+    cv.toBlob(function(b){res(b||blob);},"image/png");};
+  img.onerror=function(){URL.revokeObjectURL(u);res(blob);};img.src=u;});}
+function pickBetter(t1,c1,t2,c2){if(typeof c1==="number"&&typeof c2==="number")return c2>c1+2?t2:t1;return ocrScore(t2)>ocrScore(t1)?t2:t1;}
+async function runOCR(note){const w=await getWorker();const r1=await w.recognize(note.img);const t1=(r1&&r1.data&&r1.data.text||"").trim();let best=t1;
+  try{const enh=await enhanceImage(note.img);const r2=await w.recognize(enh);const t2=(r2&&r2.data&&r2.data.text||"").trim();best=pickBetter(t1,r1&&r1.data?r1.data.confidence:null,t2,r2&&r2.data?r2.data.confidence:null);}catch(e){}
+  return best;}
 function queueOCR(note){ocrQueue.push(note);pumpOCR();}
 async function pumpOCR(){if(ocrBusy)return;const note=ocrQueue.shift();if(!note)return;ocrBusy=true;
   const wrap=$("#progress-wrap"),txt=$("#progress-text"),bar=$("#progress-bar");wrap.style.display="block";bar.style.width="0%";txt.textContent="辨識中："+(note.title||"截圖")+"（還剩 "+ocrQueue.length+" 張）";
